@@ -1,6 +1,6 @@
 {
   "name": "sharedb-memory-mongo",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Sharedb in-memory database with mongo queries support",
   "main": "index.js",
   "scripts": {
