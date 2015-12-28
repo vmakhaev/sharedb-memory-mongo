@@ -123,8 +123,12 @@ MemoryDB.prototype.query = function(collection, query, fields, options, callback
         datas.push(snapshot.data);
       }
 
-      var agg = new Mingo.Aggregator(query.$aggregate)
+      var aggregateQuery = query.$aggregate
+      if (!Array.isArray(aggregateQuery)) aggregateQuery = [aggregateQuery]
+
+      var agg = new Mingo.Aggregator(aggregateQuery)
       var result = agg.run(datas);
+
       return callback(null, [], result);
     }
 
@@ -145,6 +149,7 @@ MemoryDB.prototype.query = function(collection, query, fields, options, callback
     for (var i = 0; i < results.length; i++) {
       var result = results[i];
       var snapshot = result.__snapshot;
+      delete result.__snapshot;
       snapshots.push(snapshot);
     }
 
