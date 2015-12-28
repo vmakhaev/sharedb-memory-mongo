@@ -113,14 +113,39 @@ MemoryDB.prototype.query = function(collection, query, fields, options, callback
   var db = this;
   process.nextTick(function() {
     var collectionDocs = db.docs[collection];
-    query = normalizeQuery(query)
-    var snapshots = [];
-    for (var id in collectionDocs || {}) {
-      var snapshot = db._getSnapshotSync(collection, id);
-      var mingoQuery = new Mingo.Query(query.$query)
-      if (mingoQuery.find([snapshot.data]).all().length) {
-        snapshots.push(snapshot);
+
+    query = normalizeQuery(query);
+    var datas = []
+
+    if (query.$aggregate) {
+      for (var id in collectionDocs) {
+        var snapshot = db._getSnapshotSync(collection, id);
+        datas.push(snapshot.data);
       }
+
+      var agg = new Mingo.Aggregator(query.$aggregate)
+      var result = agg.run(datas);
+      return callback(null, [], result);
+    }
+
+    for (var id in collectionDocs) {
+      var snapshot = db._getSnapshotSync(collection, id);
+      var data = snapshot.data;
+      data.__snapshot = snapshot;
+      datas.push(data);
+    }
+
+    var mingoQuery = new Mingo.Query(query.$query);
+    var results = mingoQuery.find(datas).all();
+
+    if (query.$count) return callback(null, [], results.length);
+
+    var snapshots = [];
+
+    for (var i = 0; i < results.length; i++) {
+      var result = results[i];
+      var snapshot = result.__snapshot;
+      snapshots.push(snapshot);
     }
 
     callback(null, snapshots);
